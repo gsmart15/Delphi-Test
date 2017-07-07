@@ -1,0 +1,179 @@
+unit DataSerializationUnit;
+
+interface
+
+uses
+  SysUtils, Classes, dmDatabase, RecListUnit, ComCtrls, StrUtils;
+
+type
+   TDataLoadedProc = procedure (obj: TObject; List: TList) of object;
+
+   TDataSerializer = class(TComponent)  
+     
+     private
+       FdmRange: TdmRange;
+       FRangeElementList: TRangeElementRecList;                                  
+
+       function GetdmRange: TdmRange;
+       function GetRangeElementList: TRangeElementRecList;
+       procedure SetdmRange(const Value: TdmRange);
+       procedure SetRangeElementList(const Value: TRangeElementRecList);
+
+     public
+       constructor Create(AOwner: TComponent); override;
+       destructor Destroy; override;
+       function LoadDataIntoList(obj: TObject; DataLoaded: TDataLoadedProc): Boolean; virtual;
+       function SaveData(const ANode: TTreeNode; AFieldNames: array of string;
+                         AFieldValues: array of variant): Boolean; virtual;
+       procedure Init;
+       function GetRangeElementTotalQty(ATreeNode: TTreeNode; AElementId: Integer): Integer;
+       function GetRangeTotalQty(const ARangeId: Integer): Integer;
+       function GetRangeTotalQty(const ARangeId: Integer): Integer;
+
+       property dmRange: TdmRange read GetdmRange write SetdmRange;
+       property RangeElementList: TRangeElementRecList read GetRangeElementList write SetRangeElementList;
+   end;
+
+implementation
+
+uses
+  Constants;
+
+{ TDataSerializer }
+
+constructor TDataSerializer.Create(AOwner: TComponent);
+begin
+  inherited;
+  FdmRange := TdmRange.Create(TComponent(Self));
+  FRangeElementList := TRangeElementRecList.Create;
+end;
+
+destructor TDataSerializer.Destroy;
+begin
+  FreeAndNil(FdmRange);
+  FreeAndNil(FRangeElementList);
+  inherited;
+end;
+
+function TDataSerializer.GetdmRange: TdmRange;
+begin
+  Result := FdmRange;
+end;
+
+function TDataSerializer.GetRangeElementList: TRangeElementRecList;
+begin
+  Result := FRangeElementList;
+end;
+
+function TDataSerializer.GetRangeElementTotalQty(ATreeNode: TTreeNode; AElementId: Integer): Integer;
+begin
+  Result := 0;
+  if not ATreeNode.HasChildren then
+    Result := PRangeElementRec(ATreeNode.Data)^.qty
+  else
+  begin
+    ATreeNode := ATreeNode.GetNext;
+    while Assigned(ATreeNode) and (AElementId = PRangeElementRec(ATreeNode.Data).element_id) do
+    begin
+      Result := Result + PRangeElementRec(ATreeNode.Data)^.qty;
+      ATreeNode := ATreeNode.GetNext;
+    end;
+  end;
+end;
+
+function TDataSerializer.GetRangeTotalQty(const ARangeId: Integer): Integer;
+var
+  i: Integer;
+begin
+  Result := 0;
+  for I := 0 to Pred(FRangeElementList.Count) do
+    if FRangeElementList[i].range_id = ARangeId then
+      Result := Result + FRangeElementList[i].qty;
+end;
+
+procedure TDataSerializer.Init;
+begin
+  FdmRange.LoadData(LOAD_DATA_STR);  
+end;
+
+function TDataSerializer.LoadDataIntoList(obj: TObject; DataLoaded: TDataLoadedProc): Boolean;
+var
+  lRangeElementRec: PRangeElementRec;
+begin
+  Result := False;
+  if Assigned(DataLoaded) and Assigned(Obj) then
+  begin
+    with FdmRange do
+    begin
+      try
+        Init;
+        Query.First;
+        FRangeElementList.Clear;
+        while not Query.Eof do
+        begin
+          New(lRangeElementRec, Create(False));
+          with lRangeElementRec^ do
+          begin
+            range_id               := Query.FieldByName(c_range_id).AsInteger;
+            range_desc             := Query.FieldByName(c_range_desc).AsString;
+            element_range_id       := Query.FieldByName(c_element_range_id).AsInteger;
+            element_id             := Query.FieldByName(c_element_id).AsInteger;
+            element_range_desc     := Query.FieldByName(c_element_range_desc).AsString;     
+            subelement_range_id    := Query.FieldByName(c_subelement_range_id).AsInteger;
+            subelement_element_id  := Query.FieldByName(c_subelement_element_id).AsInteger;
+            subelement_id          := Query.FieldByName(c_subelement_id).AsInteger;
+            subelement_name        := Query.FieldByName(c_subelement_name).AsString;
+            size_desc              := Query.FieldByName(c_size_desc).AsString;
+            color_desc             := Query.FieldByName(c_color_desc).AsString;
+            qty                    := Query.FieldByName(c_qty).AsInteger;
+          end;
+          FRangeElementList.Add(lRangeElementRec);
+          Query.Next;
+        end;
+      finally
+        Query.Close;
+      end;
+      DataLoaded(obj, FRangeElementList);
+      Result := True;
+    end;
+  end;
+end;
+
+function TDataSerializer.SaveData(const ANode: TTreeNode; AFieldNames: array of string;
+                         AFieldValues: array of variant): Boolean;
+var
+  strSql: string;
+  i, idx: Integer;
+  lRangeId, lElementId: Integer;
+begin
+  lRangeId := PRangeElementRec(ANode.Data).range_id;
+  lElementId := PRangeElementRec(ANode.Data).element_id;
+  for I := 0 to High(AFieldNames) do
+  begin
+    strSql := 'UPDATE range_element set ' + AFieldNames[i] + ' = ' + QuotedStr(AFieldValues[i]) +
+              ' WHERE range_id = ' + IntToStr(lRangeId) + ' AND element_id = ' + IntToStr(lElementId);
+    FdmRange.LoadData(strSql, True);
+    idx := FRangeElementList.IndexOf(PRangeElementRec(ANode.Data));
+    if idx > -1 then
+    begin
+      case AnsiIndexStr(AFieldNames[i], [c_size_desc, c_color_desc, c_qty]) of
+        0 : FRangeElementList.Items[idx].size_desc := AFieldValues[i];
+        1 : FRangeElementList.Items[idx].color_desc := AFieldValues[i];
+        2 : FRangeElementList.Items[idx].qty := AFieldValues[i];
+      end;
+    end;
+  end;
+  Result := True;
+end;
+
+procedure TDataSerializer.SetdmRange(const Value: TdmRange);
+begin
+  FdmRange := Value;
+end;
+
+procedure TDataSerializer.SetRangeElementList(const Value: TRangeElementRecList);
+begin
+  FRangeElementList := Value;
+end;
+
+end.

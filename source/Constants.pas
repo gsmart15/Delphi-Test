@@ -1,0 +1,44 @@
+unit Constants;
+
+interface
+
+const
+  CONN_STR = 'Provider=MSDASQL.1;Persist Security Info=False;User ID=GAUTRIPA-IN\gautripa;Data Source=MSSQL';
+  
+  LOAD_DATA_STR = 'SELECT r.range_id, r.range_desc, re.range_id element_range_id, re.element_id, re.range_desc element_range_desc, ' +
+	                're.size_desc, re.color_desc, re.qty, rse.range_id subelement_range_id, ' +
+                  'rse.element_id subelement_element_id, rse.subelement_id, rse.subelement_name ' +
+                  'FROM range_element re INNER JOIN range r ' +
+                  'ON (re.range_id = r.range_id) ' +
+                  'INNER JOIN range_sub_element rse ' +
+		  'ON (re.element_id = rse.element_id) ' +
+		  'ORDER BY r.range_id, re.element_id, rse.element_id';
+
+
+  c_range_id              = 'range_id';
+  c_range_desc            = 'range_desc';
+  c_element_range_id      = 'element_range_id';
+  c_element_id            = 'element_id';
+  c_element_range_desc    = 'element_range_desc';
+  c_subelement_range_id   = 'subelement_range_id';
+  c_subelement_element_id = 'subelement_element_id';
+  c_subelement_id         = 'subelement_id';
+  c_subelement_name       = 'subelement_name';
+  c_size_desc             = 'size_desc';
+  c_color_desc            = 'color_desc';
+  c_qty                   = 'qty';
+
+  cTreeViewFormat      = '%s : Color - %s : Size - %s';
+  cDBConnected: array[0..1] of string = ('Database Connected', 'Database Disconnected');
+  
+resourcestring
+  rsRange_Description = 'Range';
+  rsMainFrmCaption    = 'Range Products Description';
+  rsDataLoaded        = 'Data Loaded';
+  rsDataModified      = 'Data Modified';
+  rsRange             = 'Range';
+  rsTotPlannedQty     = ' Total Planned Qty:';
+  
+implementation
+
+end.

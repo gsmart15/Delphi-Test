@@ -1,0 +1,94 @@
+unit RecListUnit;
+
+interface
+
+uses
+  SysUtils, Classes, Variants;
+
+type
+  PRangeElementRec = ^TRangeElementRec;
+  TRangeElementRec = record
+    range_id: Integer;
+    range_desc: string;
+    element_range_id: Integer;
+    element_id: Integer;
+    element_range_desc: string;
+    subelement_range_id: Integer;
+    subelement_element_id: Integer;
+    subelement_id: Integer;
+    subelement_name: string;                          
+    size_desc: string;
+    color_desc: string;
+    qty: Integer;
+    is_root_node: Boolean;
+    constructor Create(const IsRootNode: Boolean);
+  end;
+
+
+  TRangeElementRecList = class(TList)
+  private
+    function Get(Index: Integer): PRangeElementRec;
+    procedure Put(Idx: Integer; Item: PRangeElementRec);
+  public
+    destructor Destroy; override;
+    function Add(Value: PRangeElementRec): Integer;
+    class procedure FilterList(OrigList, FilteredList: TRangeElementRecList; AValue: Variant);
+
+    property Items[Index: Integer]: PRangeElementRec read Get write Put; default;
+  end;
+
+implementation
+
+{ TRangeElementRecList }
+
+function TRangeElementRecList.Add(Value: PRangeElementRec): Integer;
+begin
+  Result := inherited Add(Value);
+end;
+
+destructor TRangeElementRecList.Destroy;
+var
+  i: Integer;
+  rec: PRangeElementRec;
+begin
+  i := 0;
+  for rec in Items[i] do  //   i := 0 to Count - 1 do
+  begin
+    Dispose(rec);
+    Inc(i)
+  end;
+  inherited;
+end;
+
+class procedure TRangeElementRecList.FilterList(OrigList, FilteredList: TRangeElementRecList;
+                AValue: Variant);
+var
+  i: Integer;
+begin
+  if (not VarIsNull(AValue)) or (OrigList.Count = 0) then
+  begin
+    FilteredList.Clear;
+    for i := OrigList.Count - 1 downto 0 do
+      if PRangeElementRec(OrigList[i]).element_id = AValue then
+        FilteredList.Add(OrigList[i]);
+  end;
+end;
+
+function TRangeElementRecList.Get(Index: Integer): PRangeElementRec;
+begin
+  Result := PRangeElementRec(inherited Get(Index));
+end;
+
+procedure TRangeElementRecList.Put(Idx: Integer; Item: PRangeElementRec);
+begin
+  inherited Put(Idx, Item);
+end;
+
+{ TRangeElementRec }
+
+constructor TRangeElementRec.Create(const IsRootNode: Boolean);
+begin
+  is_root_node := IsRootNode; 
+end;
+
+end.

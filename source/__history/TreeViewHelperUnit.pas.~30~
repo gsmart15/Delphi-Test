@@ -1,0 +1,70 @@
+unit TreeViewHelperUnit;
+
+interface
+
+uses
+  SysUtils, Classes, RecListUnit, ComCtrls, DataSerializationUnit, Constants;
+
+  procedure LoadTreeView(tv: TTreeView; var AList: TRangeElementRecList);
+  
+implementation
+
+procedure LoadTreeView(tv: TTreeView; var AList: TRangeElementRecList) ;
+var
+  i, CurrentRangeID, RecordRangeID, OldElementId: Integer;
+  RootNode, RangeNode: TTreeNode;
+  rec: PRangeElementRec;
+  ltmpList: TRangeElementRecList;
+
+  procedure FillChildNodes(ANode: TTreeNode; AValue: Variant; tmpList: TRangeElementRecList);
+  var
+    j, CurrentElementId: Integer;
+    node1 : TTreeNode;
+    rec1: PRangeElementRec;
+  begin
+    TRangeElementRecList.FilterList(AList, tmpList, AValue);
+    CurrentElementId := 1;
+    node1 := nil;
+    for j := 0 to tmpList.Count - 1 do
+    begin
+      rec1 := tmpList.Items[j];
+      if (node1 = nil) or (AValue <> CurrentElementId) then
+      begin
+        node1 := tv.Items.AddChildObject(ANODE, Format(cTreeViewFormat, [rec1.element_range_desc,
+                                                      rec1.color_desc, rec1.size_desc]), rec1);
+        CurrentElementId := AValue;
+      end;
+      tv.Items.AddChildObject(node1, rec1.subelement_name, rec1);
+      //FillChildNodes(node1, tmpList[j].subelement_id);
+    end;
+  end;
+begin
+  CurrentRangeID := 1;
+  OldElementId := 1;
+  tv.Items.Clear;
+  RootNode := tv.Items.Add(nil, rsRange_Description);
+  RangeNode := nil;
+  ltmpList := TRangeElementRecList.Create;
+  try
+    for i := 0 to AList.Count - 1 do
+    begin
+      RecordRangeID := AList.Items[i].range_id;
+      if (RangeNode = nil) or (RecordRangeID <> CurrentRangeID) then
+      begin
+        New(rec, Create(True));
+        rec.range_id   := AList.Items[i].range_id;
+        rec.range_desc := AList.Items[i].range_desc;
+        rec.qty        := AList.Items[i].qty;
+        RangeNode := tv.Items.AddChildObject(RootNode, rec.range_desc, rec);
+        CurrentRangeID := RecordRangeID;
+      end;
+      if OldElementId <> AList.Items[i].element_id then
+        FillChildNodes(RangeNode, AList.Items[i].element_id, ltmpList);
+      OldElementId := AList.Items[i].element_id;
+    end;
+  finally
+    FreeAndNil(ltmpList);
+  end;
+end;
+    
+end.

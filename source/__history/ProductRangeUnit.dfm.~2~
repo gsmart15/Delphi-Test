@@ -1,0 +1,157 @@
+object frmMain: TfrmMain
+  Left = 0
+  Top = 0
+  Caption = 'frmMain'
+  ClientHeight = 331
+  ClientWidth = 649
+  Color = clBtnFace
+  Constraints.MinHeight = 370
+  Constraints.MinWidth = 665
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Style = []
+  OldCreateOrder = False
+  OnClose = FormClose
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  PixelsPerInch = 96
+  TextHeight = 13
+  object pnlTop: TPanel
+    Left = 0
+    Top = 0
+    Width = 412
+    Height = 331
+    Align = alLeft
+    BevelOuter = bvNone
+    TabOrder = 0
+    object TreeView: TTreeView
+      Left = 0
+      Top = 0
+      Width = 412
+      Height = 312
+      Align = alClient
+      Indent = 19
+      ReadOnly = True
+      TabOrder = 0
+      OnChange = TreeViewChange
+    end
+    object StatusBar: TStatusBar
+      Left = 0
+      Top = 312
+      Width = 412
+      Height = 19
+      Panels = <
+        item
+          Width = 200
+        end
+        item
+          Width = 50
+        end>
+    end
+  end
+  object pnlRight: TPanel
+    Left = 412
+    Top = 0
+    Width = 237
+    Height = 331
+    Align = alClient
+    TabOrder = 1
+    object btnLoadData: TButton
+      Left = 1
+      Top = 255
+      Width = 235
+      Height = 25
+      Align = alBottom
+      Caption = 'Load/Show Data'
+      TabOrder = 1
+      OnClick = btnLoadDataClick
+    end
+    object btnSaveData: TButton
+      Left = 1
+      Top = 280
+      Width = 235
+      Height = 25
+      Align = alBottom
+      Caption = 'Save Data'
+      TabOrder = 2
+      OnClick = btnSaveDataClick
+    end
+    object btnCancel: TButton
+      Left = 1
+      Top = 305
+      Width = 235
+      Height = 25
+      Align = alBottom
+      Cancel = True
+      Caption = 'Cancel'
+      TabOrder = 3
+      OnClick = btnCancelClick
+    end
+    object GroupBox1: TGroupBox
+      Left = 1
+      Top = 1
+      Width = 235
+      Height = 254
+      Align = alClient
+      Caption = 'Range Elements'
+      TabOrder = 0
+      object lblRangeElQty: TLabel
+        Left = 8
+        Top = 75
+        Width = 97
+        Height = 13
+        Caption = 'Range Element Qty:'
+      end
+      object lblTotQtyDisp: TLabel
+        Left = 65
+        Top = 164
+        Width = 3
+        Height = 13
+      end
+      object lblTotQty: TLabel
+        Left = 30
+        Top = 137
+        Width = 90
+        Height = 13
+        Caption = 'Total Planned Qty:'
+      end
+      object lblSize: TLabel
+        Left = 8
+        Top = 27
+        Width = 64
+        Height = 13
+        Caption = 'Element Size:'
+      end
+      object lblColor: TLabel
+        Left = 8
+        Top = 51
+        Width = 70
+        Height = 13
+        Caption = 'Element Color:'
+      end
+      object edtQty: TEdit
+        Left = 111
+        Top = 72
+        Width = 121
+        Height = 21
+        TabOrder = 2
+      end
+      object edtSize: TEdit
+        Left = 111
+        Top = 24
+        Width = 121
+        Height = 21
+        TabOrder = 0
+      end
+      object edtColor: TEdit
+        Left = 111
+        Top = 48
+        Width = 121
+        Height = 21
+        TabOrder = 1
+      end
+    end
+  end
+end

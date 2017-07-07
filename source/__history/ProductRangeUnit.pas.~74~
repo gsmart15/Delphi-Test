@@ -1,0 +1,194 @@
+unit ProductRangeUnit;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, ComCtrls, ExtCtrls, StdCtrls, DataSerializationUnit, RecListUnit;
+
+type
+  TfrmMain = class(TForm)
+    pnlTop: TPanel;
+    TreeView: TTreeView;
+    pnlRight: TPanel;
+    btnLoadData: TButton;
+    btnSaveData: TButton;
+    btnCancel: TButton;
+    GroupBox1: TGroupBox;
+    edtQty: TEdit;
+    lblRangeElQty: TLabel;
+    lblTotQtyDisp: TLabel;
+    lblTotQty: TLabel;
+    StatusBar: TStatusBar;
+    edtSize: TEdit;
+    edtColor: TEdit;
+    lblSize: TLabel;
+    lblColor: TLabel;
+    procedure btnLoadDataClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure TreeViewChange(Sender: TObject; Node: TTreeNode);
+    procedure btnSaveDataClick(Sender: TObject);
+    procedure btnCancelClick(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormDestroy(Sender: TObject);
+    procedure TreeViewDeletion(Sender: TObject; Node: TTreeNode);
+  private
+    { Private declarations }
+    FSerializer: TDataSerializer;
+    FNode: TTreeNode;
+    procedure Init;
+    procedure SetStatusBar(Sender : TObject);
+    procedure UpdateVisualControls(const ANode: TTreeNode);
+    procedure EnableDisableControls(const AEnable: Boolean);
+  public
+    { Public declarations }
+    procedure LoadAndShowData(obj: TObject; List: TList);
+  end;
+
+
+var  
+  frmMain: TfrmMain;   
+  
+implementation
+
+uses
+  Constants, TreeViewHelperUnit;
+
+{$R *.dfm}
+
+{ TfrmMain }
+
+procedure TfrmMain.btnCancelClick(Sender: TObject);
+begin
+  Self.Close;
+end;
+
+procedure TfrmMain.btnLoadDataClick(Sender: TObject);
+begin
+  if FSerializer.LoadDataIntoList(TreeView, LoadAndShowData) then
+  begin
+    SetStatusBar(Sender);
+    TreeView.FullExpand;
+  end;
+end;
+
+procedure TfrmMain.btnSaveDataClick(Sender: TObject);
+begin
+  if Assigned(FNode) and (not FNode.HasChildren) then
+  begin
+    if FSerializer.SaveData(FNode, [c_size_desc, c_color_desc, c_qty], [edtSize.Text, edtColor.Text, edtQty.Text]) then
+    begin
+      btnLoadDataClick(Sender);
+      UpdateVisualControls(FNode);
+      SetStatusBar(Sender);
+    end;
+  end;
+end;
+
+procedure TfrmMain.EnableDisableControls(const AEnable: Boolean);
+begin
+  edtSize.Enabled  := AEnable;
+  edtColor.Enabled := AEnable;
+  edtQty.Enabled   := AEnable;
+end;
+
+procedure TfrmMain.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  Action := caFree;
+end;
+
+procedure TfrmMain.FormCreate(Sender: TObject);
+begin
+  FSerializer := TDataSerializer.Create(Self);
+  Init;
+  Caption := rsMainFrmCaption;
+  Position := poScreenCenter;
+end;
+
+procedure TfrmMain.FormDestroy(Sender: TObject);
+var
+  ANode: TTreeNode;
+  rec: PRangeElementRec;
+begin
+  {for ANode in TreeView.Items do
+  begin
+    if Assigned(ANode.Data) then
+    begin
+      rec := ANode.Data;
+      Dispose(rec);
+    end;
+  end;}
+  FreeAndNil(FSerializer);
+end;
+
+procedure TfrmMain.Init;
+begin
+  EnableDisableControls(False);
+  SetStatusBar(nil);
+end;
+
+procedure TfrmMain.LoadAndShowData(obj: TObject; List: TList);
+begin
+  LoadTreeView(TTreeView(obj), TRangeElementRecList(List));
+end;
+
+procedure TfrmMain.SetStatusBar(Sender : TObject);
+begin
+  if FSerializer.dmRange.ADOConnection.Connected then
+    StatusBar.Panels[0].Text := cDBConnected[0]
+  else
+    StatusBar.Panels[0].Text := cDBConnected[1];
+  if (TreeView.Items.Count <> 0) then
+  begin
+    if (Sender = btnLoadData) or (not Assigned(Sender)) then
+      StatusBar.Panels[1].Text := rsDataLoaded
+    else if Sender = btnSaveData then
+      StatusBar.Panels[1].Text := rsDataModified;
+  end;
+end;
+
+procedure TfrmMain.TreeViewChange(Sender: TObject; Node: TTreeNode);
+begin
+  FNode := Node;
+  UpdateVisualControls(Node);
+end;
+
+procedure TfrmMain.TreeViewDeletion(Sender: TObject; Node: TTreeNode);
+var
+  rec : PRangeElementRec;
+begin
+  rec := Node.Data;
+  Dispose(rec);
+end;
+
+procedure TfrmMain.UpdateVisualControls(const ANode: TTreeNode);
+begin
+  if Assigned(ANode.Parent) and Assigned(ANode.Data) then
+  begin
+    lblTotQty.Caption := PRangeElementRec(ANode.Data).range_desc + rsTotPlannedQty;
+    lblTotQtyDisp.Caption := IntToStr(FSerializer.GetRangeTotalQty(PRangeElementRec(ANode.Data).range_id));
+    if PRangeElementRec(ANode.Data).is_root_node then
+    begin
+      edtSize.Text   := EmptyStr;
+      edtColor.Text  := EmptyStr;
+      edtQty.Text := lblTotQtyDisp.Caption;
+      EnableDisableControls(False);
+    end
+    else
+    begin
+      edtSize.Text   := PRangeElementRec(ANode.Data).size_desc;
+      edtColor.Text  := PRangeElementRec(ANode.Data).color_desc;
+      edtQty.Text    := IntToStr(FSerializer.GetRangeElementTotalQty(ANode, PRangeElementRec(ANode.Data).element_id));
+      EnableDisableControls(True);
+    end;
+  end
+  else
+  begin
+    lblTotQty.Caption := rsRange + rsTotPlannedQty;
+    lblTotQtyDisp.Caption := IntToStr(FSerializer.GetRangeTotalQty);
+    edtQty.Text := lblTotQtyDisp.Caption;
+    EnableDisableControls(False);
+  end;
+end;
+
+end.
